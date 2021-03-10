@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deno WebSockets Chatroom</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body{
+      background: #eee;
+      margin: 40px;
+    }
+    body, button, input{ 
+      font-family: Inter;
+    }
+    h1{
+      text-align: center;
+      color: #444;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #fbfbfb;
+    }
+    .container{ 
+      max-width: 960px; 
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+    .name-form, .chat-form{ 
+      display: flex; 
+      justify-content: center;
+    }
+    input{ 
+      padding: 16px; 
+      font-size: 1.3em; 
+      margin-right: 10px; 
+      border: 1px solid #ddd; 
+      border-radius: 10px;
+    }
+    button{ 
+      font-size: 1.3em; 
+      padding: 16px; 
+      background: #006aee; 
+      color: white; 
+      border: 0; 
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .chat-list { 
+      padding: 0;
+    }
+    .chat-list li{ 
+      margin: 16px 0; 
+      list-style-type: none; 
+    }
+    .chat-list .name{ 
+      color: #006aee;
+      font-size: 1.4em; 
+      font-weight: bold; 
+    }
+    .chat-list .mssg{ 
+      font-size: 1.2em;
+      margin-top: 4px;
+    } 
+    .hidden{
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lomy Chat</h1>
+
+    <form class="name-form">
+      <input type="text" name="nickname" placeholder="Choose Nickname" required />
+      <button>Enter Chat</button>
+    </form>
+
+    <div class="chatroom hidden">
+      <ul class="chat-list">
+        <li>
+          <div class="name">Yoshi</div>
+          <div class="msg">Sup!</div>
+        </li>
+      </ul>
+      <form class="chat-form">
+        <input type="text" name="msg" placeholder="Type message" required />
+        <button>Send</button>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    // new ws connection
+    let ws = new WebSocket('ws://localhost:3000/ws');
+    const $nameForm = document.querySelector(`.name-form`);
+    const $chatForm = document.querySelector(`.chat-form`);
+    const $chatroom = document.querySelector(`.chatroom`);
+    const $chatList = document.querySelector(`.chat-list`);
+
+    let name = 'Anon';
+
+    // Login to chat
+    $nameForm.addEventListener('submit', e => {
+      e.preventDefault();
+
+      if ($nameForm.nickname.value) {
+        name = $nameForm.nickname.value;
+      }
+      $nameForm.classList.add('hidden');
+      $chatroom.classList.remove('hidden');
+    });
+
+    // Send a message
+    $chatForm.addEventListener('submit', e => {
+      e.preventDefault();
+
+      let msg = $chatForm.msg.value;
+      ws.send(JSON.stringify({ name, msg }));
+
+      $chatForm.msg.value = '';
+      $chatForm.msg.focus();
+    });
+
+    //output event to dom
+    const outputMessage = ({ data }) => {
+      const { name, msg } = JSON.parse(data);
+      const newMessage = document.createElement('li');
+
+      newMessage.innerHTML = `
+        <li>
+          <div class="name">${name}</div>
+          <div class="msg">${msg}</div>
+        </li>
+      `;
+
+      $chatList.appendChild(newMessage);
+    }
+
+    // ws listener: we're getting a message from the server
+    ws.addEventListener('message', outputMessage);
+
+  </script>
+</body>
+</html>
